@@ -1,0 +1,8 @@
+age: 18
+env: prod
+name: yp
+weight: 50kg
+wushan:
+  zookeeper:
+    default:
+      endpoints: 127.0.0.1:2181, 127.0.0.2:2181, 127.0.0.2:2181
