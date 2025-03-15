@@ -3,20 +3,28 @@ from io import StringIO
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import PreservedScalarString
 
-# app.py
 app = Flask(__name__)
 yaml = YAML(typ='rt')
 
-def merge_yaml(yaml1, yaml2):
-    yaml1_data = yaml.load(yaml1)
-    yaml2_data = yaml.load(yaml2)
-    
-    for key, value in yaml2_data.items():
-        if key not in yaml1_data:
-            yaml1_data[key] = value
-    
+def merge_yaml(yaml_base, yaml_add, yaml_del):
+    base_data = yaml.load(yaml_base)
+    add_data = yaml.load(yaml_add)
+    del_data = yaml.load(yaml_del)
+
+    # 删除指定的键
+    if del_data:
+        for key in del_data:
+            if key in base_data:
+                del base_data[key]
+
+    # 添加新的键
+    if add_data:
+        for key, value in add_data.items():
+            if key not in base_data:
+                base_data[key] = value
+
     output = StringIO()
-    yaml.dump(yaml1_data, output)
+    yaml.dump(base_data, output)
     return output.getvalue()
 
 @app.route('/')
@@ -25,9 +33,10 @@ def index():
 
 @app.route('/merge', methods=['POST'])
 def merge():
-    yaml1 = request.form['yaml1']
-    yaml2 = request.form['yaml2']
-    merged_yaml = merge_yaml(yaml1, yaml2)
+    yaml_base = request.form['yaml_base']
+    yaml_add = request.form['yaml_add']
+    yaml_del = request.form['yaml_del']
+    merged_yaml = merge_yaml(yaml_base, yaml_add, yaml_del)
     return jsonify({'merged_yaml': merged_yaml})
 
 if __name__ == '__main__':

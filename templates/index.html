@@ -8,8 +8,9 @@
 <body>
     <h1>YAML Merge Tool</h1>
     <form id="yamlForm">
-        <textarea id="yaml1" name="yaml1" rows="10" cols="30" placeholder="Paste YAML 1 here"></textarea>
-        <textarea id="yaml2" name="yaml2" rows="10" cols="30" placeholder="Paste YAML 2 here"></textarea>
+        <textarea id="yaml_base" name="yaml_base" rows="10" cols="30" placeholder="Paste base.yaml here"></textarea>
+        <textarea id="yaml_add" name="yaml_add" rows="10" cols="30" placeholder="Paste add_key_to_base.yaml here"></textarea>
+        <textarea id="yaml_del" name="yaml_del" rows="10" cols="30" placeholder="Paste del_key_to_base.yaml here"></textarea>
         <button type="button" onclick="mergeYAML()">Merge</button>
     </form>
     <textarea id="mergedYaml" rows="10" cols="60" readonly></textarea>
