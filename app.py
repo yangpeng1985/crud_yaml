@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify, render_template
 from io import StringIO
 from ruamel.yaml import YAML
-from ruamel.yaml.scalarstring import PreservedScalarString
+from ruamel.yaml.comments import CommentedMap
 
 app = Flask(__name__)
-yaml = YAML(typ='rt')
+yaml = YAML()
+yaml.preserve_quotes = True  # 保留引号
 
 def merge_yaml(yaml_base, yaml_add, yaml_del):
     base_data = yaml.load(yaml_base)
