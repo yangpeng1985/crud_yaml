@@ -1,0 +1,45 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>YAML Merge</title>
+</head>
+<body>
+    <h1>YAML Merge Tool</h1>
+    <form id="yamlForm">
+        <textarea id="yaml1" name="yaml1" rows="10" cols="30" placeholder="Paste YAML 1 here"></textarea>
+        <textarea id="yaml2" name="yaml2" rows="10" cols="30" placeholder="Paste YAML 2 here"></textarea>
+        <button type="button" onclick="mergeYAML()">Merge</button>
+    </form>
+    <textarea id="mergedYaml" rows="10" cols="60" readonly></textarea>
+    <button onclick="copyToClipboard()">Copy Merged YAML</button>
+
+    <style>
+        textarea {
+            width: 100%;
+            resize: vertical;
+        }
+    </style>
+
+    <script>
+        function mergeYAML() {
+            const formData = new FormData(document.getElementById('yamlForm'));
+            fetch('/merge', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('mergedYaml').value = data.merged_yaml;
+            });
+        }
+
+        function copyToClipboard() {
+            const mergedYaml = document.getElementById('mergedYaml');
+            mergedYaml.select();
+            document.execCommand('copy');
+        }
+    </script>
+</body>
+</html>

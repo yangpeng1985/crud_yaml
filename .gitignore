@@ -1,2 +1,4 @@
 myenv/
 operation_yaml/__pycache__
+__pycache__/
+*.pyc
