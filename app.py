@@ -8,12 +8,13 @@ app = Flask(__name__)
 yaml = YAML()
 yaml.preserve_quotes = True  # 保留引号
 
-def merge_yaml(yaml_base, yaml_add, yaml_del):
+def merge_yaml(yaml_base, yaml_add, yaml_del, yaml_change):
     try:
         # 加载 YAML 数据并转换为 CommentedMap
         base_data = yaml.load(yaml_base) or CommentedMap()
         add_data = yaml.load(yaml_add) or CommentedMap()
         del_data = yaml.load(yaml_del) or CommentedMap()
+        change_data = yaml.load(yaml_change) or CommentedMap()
     except ParserError as e:
         print(f"YAML 解析错误: {e}")
         return None
@@ -22,6 +23,22 @@ def merge_yaml(yaml_base, yaml_add, yaml_del):
     for key in del_data:
         if key in base_data:
             del base_data[key]
+    
+    # 修改之前检查所有待修改的key在base中是否存在，不存在则报错，打印所有不存在的key
+    not_exist_keys = []
+    for key, value in change_data.items():
+        if key not in base_data:
+            not_exist_keys.append(key)
+    if not_exist_keys:
+        print(f"以下 key 在 base 中不存在，无法执行修改和合并操作，请先确认原因: {not_exist_keys}")
+        return None
+    
+
+    # 修改指定的键的值
+    for key, value in change_data.items():
+        if key in base_data:
+            base_data[key] = value
+
 
     # 添加新的键并保留注释
     for key, value in add_data.items():
@@ -57,7 +74,8 @@ def merge():
     yaml_base = request.form['yaml_base']
     yaml_add = request.form['yaml_add']
     yaml_del = request.form['yaml_del']
-    merged_yaml = merge_yaml(yaml_base, yaml_add, yaml_del)
+    yaml_change = request.form['yaml_change']
+    merged_yaml = merge_yaml(yaml_base, yaml_add, yaml_del, yaml_change)
     if merged_yaml is None:
         return jsonify({'error': 'YAML 解析错误，请检查输入的 YAML 格式'}), 400
     return jsonify({'merged_yaml': merged_yaml})

@@ -11,10 +11,12 @@ def test_merge_yaml(client):
     yaml_base = 'key1: value1\nkey2: value2'
     yaml_add = 'key3: value3\nkey4: value4'
     yaml_del = 'key2: value2'
+    yaml_change = ''
     response = client.post('/merge', data={
         'yaml_base': yaml_base,
         'yaml_add': yaml_add,
-        'yaml_del': yaml_del
+        'yaml_del': yaml_del,
+        'yaml_change': yaml_change
     })
     assert response.status_code == 200
     assert 'key1: value1' in response.json['merged_yaml']
@@ -35,10 +37,12 @@ def test_merge_with_comments(client):
     yaml_del = """
     key2: value2
     """
+    yaml_change = ''
     response = client.post('/merge', data={
         'yaml_base': yaml_base,
         'yaml_add': yaml_add,
-        'yaml_del': yaml_del
+        'yaml_del': yaml_del,
+        'yaml_change': yaml_change
     })
     assert response.status_code == 200
     merged_yaml = response.json['merged_yaml']
@@ -58,10 +62,12 @@ def test_merge_with_quotes(client):
     yaml_del = """
     key2: value2
     """
+    yaml_change = ''
     response = client.post('/merge', data={
         'yaml_base': yaml_base,
         'yaml_add': yaml_add,
-        'yaml_del': yaml_del
+        'yaml_del': yaml_del,
+        'yaml_change': yaml_change
     })
     assert response.status_code == 200
     merged_yaml = response.json['merged_yaml']
@@ -83,10 +89,12 @@ def test_merge_with_nested_keys(client):
     parent1:
       child1: value1
     """
+    yaml_change = ''
     response = client.post('/merge', data={
         'yaml_base': yaml_base,
         'yaml_add': yaml_add,
-        'yaml_del': yaml_del
+        'yaml_del': yaml_del,
+        'yaml_change': yaml_change
     })
     assert response.status_code == 200
     merged_yaml = response.json['merged_yaml']
