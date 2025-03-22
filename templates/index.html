@@ -8,9 +8,13 @@
 <body>
     <h1>YAML Merge Tool</h1>
     <form id="yamlForm">
+        <label for="yaml_base">Paste base.yaml here</label>
         <textarea id="yaml_base" name="yaml_base" rows="10" cols="30" placeholder="Paste base.yaml here"></textarea>
+        <label for="yaml_add">Paste add_key_to_base.yaml here</label>
         <textarea id="yaml_add" name="yaml_add" rows="10" cols="30" placeholder="Paste add_key_to_base.yaml here"></textarea>
+        <label for="yaml_del">Paste del_key_to_base.yaml here</label>
         <textarea id="yaml_del" name="yaml_del" rows="10" cols="30" placeholder="Paste del_key_to_base.yaml here"></textarea>
+        <label for="yaml_change">Paste change_value_to_base.yaml here</label>
         <textarea id="yaml_change" name="yaml_change" rows="10" cols="30" placeholder="Paste change_value_to_base.yaml here"></textarea>       
         <button type="button" onclick="mergeYAML()">Merge</button>
     </form>
@@ -21,6 +25,10 @@
         textarea {
             width: 100%;
             resize: vertical;
+        }
+        footer a {
+            display: block;
+            margin-top: 20px;
         }
     </style>
 
@@ -43,5 +51,10 @@
             document.execCommand('copy');
         }
     </script>
+
+    <footer>
+        <a href="http://127.0.0.1:5000/compare_page" target="_blank">Go to Compare Page</a>
+        <a href="http://127.0.0.1:5000" target="_blank">Go to Merege Page</a>
+    </footer>
 </body>
 </html>
