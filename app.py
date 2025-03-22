@@ -9,7 +9,43 @@ app = Flask(__name__)
 yaml = YAML()
 yaml.preserve_quotes = True  # 保留引号
 
+def recursive_merge(base, add):
+    """
+    递归合并两个字典，将 add 中的键值对合并到 base 中
+    如果递归检查发现key已存在，则不进行添加操作
+    支持复制注释
+    """
+    if isinstance(base, dict) and isinstance(add, dict):
+        for key, value in add.items():
+            if key in base:
+                if isinstance(base[key], dict) and isinstance(value, dict):
+                    # 递归合并嵌套字典
+                    base[key] = recursive_merge(base[key], value)
+                # 若键已存在，不进行添加操作
+                continue
+            else:
+                base[key] = value
+                # 复制键值对行尾注释
+                if hasattr(add, 'ca') and key in add.ca.items:
+                    base.yaml_add_eol_comment(add.ca.items[key][2].value, key)
+                # 复制键值对之前的注释
+                if hasattr(add, 'ca') and add.ca.comment and len(add.ca.comment) > 1:
+                    comment_before = add.ca.comment[1]
+                    if comment_before:
+                        # 检查 comment_before 是否为 CommentToken 对象
+                        if hasattr(comment_before, 'value'):
+                            base.yaml_set_comment_before_after_key(key, comment_before.value.strip(), indent=0)
+                        else:
+                            for line in comment_before:
+                                if hasattr(line, 'value'):
+                                    base.yaml_set_comment_before_after_key(key, line.value.strip(), indent=0)
+    return base
+
 def merge_yaml(yaml_base, yaml_add, yaml_del, yaml_change):
+    """
+    合并 YAML 数据, yaml_base 为基础数据，yaml_add 为要添加的数据, yaml_del 为要删除的数据, yaml_change 为要修改的数据,
+    按照顺序执行删除、修改、添加操作
+    """
     try:
         # 加载 YAML 数据并转换为 CommentedMap
         base_data = yaml.load(yaml_base) or CommentedMap()
@@ -41,25 +77,8 @@ def merge_yaml(yaml_base, yaml_add, yaml_del, yaml_change):
             base_data[key] = value
 
 
-    # 添加新的键并保留注释
-    for key, value in add_data.items():
-        if key not in base_data:
-            base_data[key] = value
-            # 复制键值对行尾注释
-            if hasattr(add_data, 'ca') and key in add_data.ca.items:
-                base_data.yaml_add_eol_comment(add_data.ca.items[key][2].value, key)
-            # 复制键值对之前的注释
-            if hasattr(add_data, 'ca') and add_data.ca.comment and len(add_data.ca.comment) > 1:
-                comment_before = add_data.ca.comment[1]
-                if comment_before:
-                    # base_data.yaml_set_comment_before_after_key(key, before=comment_before.value)
-                    # 检查 comment_before 是否为 CommentToken 对象
-                    if hasattr(comment_before, 'value'):
-                        base_data.yaml_set_comment_before_after_key(key, comment_before.value.strip(), indent=0)
-                    else:
-                        for line in comment_before:
-                            if hasattr(line, 'value'):
-                                base_data.yaml_set_comment_before_after_key(key, line.value.strip(), indent=0)
+    # 递归合并添加的数据 添加新的键并保留注释
+    base_data = recursive_merge(base_data, add_data)
 
 
     output = StringIO()
