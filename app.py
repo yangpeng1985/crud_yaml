@@ -3,6 +3,7 @@ from io import StringIO
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.parser import ParserError
+from deepdiff import DeepDiff
 
 app = Flask(__name__)
 yaml = YAML()
@@ -65,6 +66,54 @@ def merge_yaml(yaml_base, yaml_add, yaml_del, yaml_change):
     yaml.dump(base_data, output)
     return output.getvalue()
 
+def compare_yaml(yaml_a, yaml_b):
+    try:
+        # 加载 YAML 数据并转换为 CommentedMap
+        data_a = yaml.load(yaml_a) or CommentedMap()
+        data_b = yaml.load(yaml_b) or CommentedMap()
+    except ParserError as e:
+        print(f"YAML 解析错误: {e}")
+        return None
+    
+    # 使用 DeepDiff 库来对比两个 YAML 文件的内容
+    diff = DeepDiff(data_a, data_b, ignore_order=True)
+
+    a_has_b_not = {}
+    a_not_b_has = {}
+    a_b_all_has = {}
+
+    # 遍历 data_a 中的键值对
+    for key, value in data_a.items():
+        if key not in data_b or data_b[key] != value:
+            a_has_b_not[key] = value
+        else:
+            a_b_all_has[key] = value
+
+    # 遍历 data_b 中的键值对，找出 data_a 中没有的
+    for key, value in data_b.items():
+        if key not in data_a or data_a[key] != value:
+            a_not_b_has[key] = value
+
+    print(f"a_has_b_not: {a_has_b_not}")
+    print(f"a_not_b_has: {a_not_b_has}")
+    print(f"a_b_all_has: {a_b_all_has}")
+
+    return {
+        'a_has_b_not': a_has_b_not,
+        'a_not_b_has': a_not_b_has,
+        'a_b_all_has': a_b_all_has
+    }
+
+def deep_get(dictionary, key_path):
+    keys = key_path.split('.')
+    value = dictionary
+    for key in keys:
+        if isinstance(value, dict) and key in value:
+            value = value[key]
+        else:
+            return None
+    return value
+    
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -79,6 +128,21 @@ def merge():
     if merged_yaml is None:
         return jsonify({'error': 'YAML 解析错误，请检查输入的 YAML 格式'}), 400
     return jsonify({'merged_yaml': merged_yaml})
+
+@app.route('/compare_page')
+def compare_page():
+    return render_template('compare.html')
+
+@app.route('/compare', methods=['POST'])
+def compare():
+    yaml_a = request.form['yaml_a']
+    yaml_b = request.form['yaml_b']
+    result = compare_yaml(yaml_a, yaml_b)
+    return jsonify(
+        {'a_has_b_not': result['a_has_b_not'], 
+        'a_not_b_has': result['a_not_b_has'],
+        'a_b_all_has': result['a_b_all_has'],})
+
 
 if __name__ == '__main__':
     app.run(debug=True)

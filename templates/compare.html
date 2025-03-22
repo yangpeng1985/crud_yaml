@@ -1,0 +1,55 @@
+<!-- templates/compare.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>YAML Compare</title>
+    <!-- 引入 js-yaml 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+</head>
+<body>
+    <h1>YAML compare Tool</h1>
+    <form id="yamlCompare">
+        <label for="yaml_a">a.yaml</label>
+        <textarea id="yaml_a" name="yaml_a" rows="10" cols="30" placeholder="Paste a.yaml here"></textarea>
+        <label for="yaml_b">b.yaml</label>
+        <textarea id="yaml_b" name="yaml_b" rows="10" cols="30" placeholder="Paste b.yaml here"></textarea>
+        <button type="button" onclick="compareYAML()">Compare</button>
+    </form>
+    <label for="a_has_b_not">a has b not</label>
+    <textarea id="a_has_b_not" rows="10" cols="60" readonly></textarea>
+    <label for="a_not_b_has">a not b has</label>
+    <textarea id="a_not_b_has" rows="10" cols="60" readonly></textarea>
+    <label for="a_b_all_has">a and b all has</label>
+    <textarea id="a_b_all_has" rows="10" cols="60" readonly></textarea>
+
+    <style>
+        textarea {
+            width: 100%;
+            resize: vertical;
+        }
+    </style>
+
+<script>
+    function compareYAML() {
+        const formData = new FormData(document.getElementById('yamlCompare'));
+        fetch('/compare', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            // 将 JSON 数据转换为 YAML 字符串
+            const aHasBNotYaml = jsyaml.dump(data.a_has_b_not);
+            const aNotBHasYaml = jsyaml.dump(data.a_not_b_has);
+            const aBAllHasYaml = jsyaml.dump(data.a_b_all_has);
+            // 将 YAML 字符串赋值给文本框
+            document.getElementById('a_has_b_not').value = aHasBNotYaml;
+            document.getElementById('a_not_b_has').value = aNotBHasYaml;
+            document.getElementById('a_b_all_has').value = aBAllHasYaml;
+        });
+    }
+</script>
+
+</body>
+</html>
