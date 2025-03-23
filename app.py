@@ -132,7 +132,46 @@ def deep_get(dictionary, key_path):
         else:
             return None
     return value
+
+def merge_value_of_same_key(yaml_base, yaml_new):
+    """
+    yaml_base 和 yaml_new 都是 YAML 格式的字符串，合并两个 YAML 数据，将相同 key 的值合并为一个
+    支持的场景如下：
+    场景1：将 a: "2,1" 和 a: "1,4,3" 合并为 a: "2,1,4,3", 如果合并结果是"1,2,3,4"是不符合预期的；
+    保持base数据的顺序，按照new数据的顺序合并；
     
+    """
+    try:
+        # 加载 YAML 数据并转换为 CommentedMap
+        base_data = yaml.load(yaml_base) or CommentedMap()
+        new_data = yaml.load(yaml_new) or CommentedMap()
+    except ParserError as e:
+        print(f"YAML 解析错误: {e}")
+        return None
+
+    # 仅保留同时存在于两个 YAML 中的键
+    keys_to_remove = [key for key in base_data if key not in new_data]
+    for key in keys_to_remove:
+        del base_data[key]
+
+    # 合并数据
+    common_keys = set(base_data.keys()) & set(new_data.keys())
+    for key in common_keys:
+        base_value = base_data[key]
+        new_value = new_data[key]
+        if isinstance(base_value, str) and isinstance(new_value, str):
+            base_values = base_value.split(',')
+            new_values = new_value.split(',')
+            combined_values = base_values.copy()
+            for value in new_values:
+                if value not in combined_values:
+                    combined_values.append(value)
+            base_data[key] = ','.join(combined_values)
+
+    output = StringIO()
+    yaml.dump(base_data, output)
+    return output.getvalue()
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -162,6 +201,19 @@ def compare():
         'a_not_b_has': result['a_not_b_has'],
         'a_b_all_has': result['a_b_all_has'],})
 
+@app.route('/merge_page')
+def merge_page():
+    return render_template('merge_value_of_same_key.html')
+
+@app.route('/merge_value', methods=['POST'])
+def merge_value():
+    yaml_base = request.form['yaml_base']
+    yaml_new = request.form['yaml_new']
+    merged_yaml = merge_value_of_same_key(yaml_base, yaml_new)
+    print(merged_yaml)
+    if merged_yaml is None:
+        return jsonify({'error': 'YAML 解析错误，请检查输入的 YAML 格式'}), 400
+    return jsonify({'merged_yaml': merged_yaml})
 
 if __name__ == '__main__':
     app.run(debug=True)

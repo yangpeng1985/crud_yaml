@@ -3,22 +3,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>YAML Merge</title>
+    <title>Mege value of same key</title>
 </head>
 <body>
-    <h1>YAML Merge Tool</h1>
-    <form id="yamlForm">
+    <h1>YAML Merge Value of Same Key</h1>
+    <form id="yamlMeregeValue">
         <label for="yaml_base">Paste base.yaml here</label>
         <textarea id="yaml_base" name="yaml_base" rows="10" cols="30" placeholder="Paste base.yaml here"></textarea>
-        <label for="yaml_add">Paste add_key_to_base.yaml here</label>
-        <textarea id="yaml_add" name="yaml_add" rows="10" cols="30" placeholder="Paste add_key_to_base.yaml here"></textarea>
-        <label for="yaml_del">Paste del_key_to_base.yaml here</label>
-        <textarea id="yaml_del" name="yaml_del" rows="10" cols="30" placeholder="Paste del_key_to_base.yaml here"></textarea>
-        <label for="yaml_change">Paste change_value_to_base.yaml here</label>
-        <textarea id="yaml_change" name="yaml_change" rows="10" cols="30" placeholder="Paste change_value_to_base.yaml here"></textarea>       
-        <button type="button" onclick="mergeYAML()">Merge</button>
+        <label for="yaml_new">Paste new.yaml here</label>
+        <textarea id="yaml_new" name="yaml_new" rows="10" cols="30" placeholder="Paste new.yaml here"></textarea>  
+        <button type="button" onclick="mergeYAMLValue()">Merge Value</button>
     </form>
-    <textarea id="mergedYaml" rows="10" cols="60" readonly></textarea>
+    <textarea id="mergedYamlValue" rows="10" cols="60" readonly></textarea>
     <button onclick="copyToClipboard()">Copy Merged YAML</button>
 
     <style>
@@ -33,20 +29,20 @@
     </style>
 
     <script>
-        function mergeYAML() {
-            const formData = new FormData(document.getElementById('yamlForm'));
-            fetch('/merge', {
+        function mergeYAMLValue() {
+            const formData = new FormData(document.getElementById('yamlMeregeValue'));
+            fetch('/merge_value', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('mergedYaml').value = data.merged_yaml;
+                document.getElementById('mergedYamlValue').value = data.merged_yaml;
             });
         }
 
         function copyToClipboard() {
-            const mergedYaml = document.getElementById('mergedYaml');
+            const mergedYaml = document.getElementById('mergedYamlValue');
             mergedYaml.select();
             document.execCommand('copy');
         }
