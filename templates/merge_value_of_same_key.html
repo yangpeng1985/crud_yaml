@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Mege value of same key</title>
+    <!-- 引入 js-yaml 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
 </head>
 <body>
     <h1>YAML Merge Value of Same Key</h1>
@@ -11,11 +13,19 @@
         <label for="yaml_base">Paste base.yaml here</label>
         <textarea id="yaml_base" name="yaml_base" rows="10" cols="30" placeholder="Paste base.yaml here"></textarea>
         <label for="yaml_new">Paste new.yaml here</label>
-        <textarea id="yaml_new" name="yaml_new" rows="10" cols="30" placeholder="Paste new.yaml here"></textarea>  
-        <button type="button" onclick="mergeYAMLValue()">Merge Value</button>
+        <textarea id="yaml_new" name="yaml_new" rows="10" cols="30" placeholder="Paste new.yaml here"></textarea> 
+        <label for="yaml_key">单层的字符串，比如: a: "1,2" 和 a: "2,3,4" 使用Merge Simple Value</label>
+        <br />
+        <button type="button" onclick="mergeYAMLValue()">Merge Simple Value</button>
+        <br />
+        <label for="yaml_key">有嵌套的的字典和列表， 使用Merge complex Value</label>
+        <br />
+        <button type="button" onclick="mergeNestYAMLValue()">Merge complex Value</button>
     </form>
     <textarea id="mergedYamlValue" rows="10" cols="60" readonly></textarea>
     <button onclick="copyToClipboard()">Copy Merged YAML</button>
+    <button onclick="convertToYAML()">Convert to YAML</button>
+    <button onclick="convertToJSON()">Convert to JSON</button>
 
     <style>
         textarea {
@@ -40,11 +50,49 @@
                 document.getElementById('mergedYamlValue').value = data.merged_yaml;
             });
         }
+        function mergeNestYAMLValue() {
+            const formData = new FormData(document.getElementById('yamlMeregeValue'));
+            fetch('/merge_nest_value', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // // 将 JSON 数据转换为 YAML 字符串
+                // const MergedNestYaml = jsyaml.dump(data.merged_nest_yaml);
+                // // 将 YAML 字符串赋值给文本框
+                // document.getElementById('mergedYamlValue').value = MergedNestYaml;
+                document.getElementById('mergedYamlValue').value = data.merged_nest_yaml;
+            });
+        }
 
         function copyToClipboard() {
             const mergedYaml = document.getElementById('mergedYamlValue');
             mergedYaml.select();
             document.execCommand('copy');
+        }
+
+        function convertToYAML() {
+            const mergedValue = document.getElementById('mergedYamlValue').value;
+            try {
+                const jsonData = JSON.parse(mergedValue);
+                const yamlData = jsyaml.dump(jsonData);
+                document.getElementById('mergedYamlValue').value = yamlData;
+            } catch (error) {
+                console.error('Error converting to YAML:', error);
+            }
+        }
+
+        function convertToJSON() {
+            const mergedValue = document.getElementById('mergedYamlValue').value;
+            try {
+                const yamlData = jsyaml.load(mergedValue);
+                // 第三个参数的作用是指定缩进的空格数量。例如，值为 2 时，对象的每个属性和数组的每个元素会缩进 2 个空格，这样生成的 JSON 字符串具有更好的可读性，便于人工查看和调试。
+                const jsonData = JSON.stringify(yamlData, null, 2);
+                document.getElementById('mergedYamlValue').value = jsonData;
+            } catch (error) {
+                console.error('Error converting to JSON:', error);
+            }
         }
     </script>
 

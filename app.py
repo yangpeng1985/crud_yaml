@@ -4,10 +4,14 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.parser import ParserError
 from deepdiff import DeepDiff
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
+import io
+import copy
 
 app = Flask(__name__)
 yaml = YAML()
 yaml.preserve_quotes = True  # 保留引号
+yaml.default_flow_style = True  # 使用流式风格 比如：names: ["Alice", "Bob", "Charlie"]
 
 def recursive_merge(base, add):
     """
@@ -133,6 +137,77 @@ def deep_get(dictionary, key_path):
             return None
     return value
 
+def preserve_style(target, source):
+    """保留数据结构的流式/块式样式"""
+    if isinstance(source, (CommentedMap, CommentedSeq)):
+        # 获取源对象的流式样式（布尔值）
+        flow_style = source.fa.flow_style  # 关键修正：属性访问，无括号
+        # 设置目标对象的相同样式
+        if flow_style:
+            target.fa.set_flow_style()
+
+
+def merge_data(base, new):
+    print(f"base: {base}")
+    print(f"new: {new}")
+    """递归合并数据结构并保留格式"""
+    if isinstance(base, CommentedMap) and isinstance(new, CommentedMap):
+        merged = CommentedMap()
+        preserve_style(merged, base)  # 继承 base 的流式样式
+        
+        # 合并 base 原有键
+        for key in base:
+            if key in new:
+                merged[key] = merge_data(base[key], new[key])
+            else:
+                merged[key] = copy.deepcopy(base[key])
+                if isinstance(merged[key], (CommentedMap, CommentedSeq)):
+                    preserve_style(merged[key], base[key])  # 继承子结构样式
+        print(f"merged: {merged}")
+        
+        # 添加 new 中的新键
+        for key in new:
+            if key not in base:
+                merged[key] = copy.deepcopy(new[key])
+                if isinstance(merged[key], (CommentedMap, CommentedSeq)):
+                    preserve_style(merged[key], new[key])  # 继承 new 的样式
+        return merged
+    
+    elif isinstance(base, CommentedSeq) and isinstance(new, CommentedSeq):
+        merged = CommentedSeq()
+        preserve_style(merged, base)  # 继承base的列表样式
+        
+        # 处理字符串列表合并
+        seen = set()
+        for item in base:
+            if isinstance(item, str):
+                merged.append(item)
+                seen.add(item)
+            else:
+                new_item = copy.deepcopy(item)
+                merged.append(new_item)
+        
+        for item in new:
+            if isinstance(item, str) and item not in seen:
+                merged.append(item)
+                seen.add(item)
+            elif not isinstance(item, str):
+                new_item = copy.deepcopy(item)
+                if isinstance(new_item, (CommentedMap, CommentedSeq)):
+                    preserve_style(new_item, item)
+                merged.append(new_item)
+        return merged
+    else:
+        return copy.deepcopy(new)
+
+# def merge_value_of_same_key_2(yaml_base, yaml_new):
+#     base_data = yaml.load(yaml_base) or CommentedMap()
+#     new_data = yaml.load(yaml_new) or CommentedMap()
+
+#     output = StringIO()
+#     yaml.dump(base_data, output)
+#     return output.getvalue()
+
 def merge_value_of_same_key(yaml_base, yaml_new):
     """
     yaml_base 和 yaml_new 都是 YAML 格式的字符串，合并两个 YAML 数据，将相同 key 的值合并为一个
@@ -214,6 +289,25 @@ def merge_value():
     if merged_yaml is None:
         return jsonify({'error': 'YAML 解析错误，请检查输入的 YAML 格式'}), 400
     return jsonify({'merged_yaml': merged_yaml})
+
+@app.route('/merge_nest_value', methods=['POST'])
+def merge_nest_value():
+    yaml_base = request.form['yaml_base']
+    yaml_new = request.form['yaml_new']
+    try:
+        # 加载 YAML 数据并转换为 CommentedMap
+        base_data = yaml.load(yaml_base) or CommentedMap()
+        new_data = yaml.load(yaml_new) or CommentedMap()
+    except ParserError as e:
+        print(f"YAML 解析错误: {e}")
+        return jsonify({'error': 'YAML 解析错误，请检查输入的 YAML 格式'}), 400
+    merged_nest_yaml = merge_data(base_data, new_data)
+    output = StringIO()
+    yaml.dump(merged_nest_yaml, output)
+    merged_nest_str = output.getvalue()
+    if merged_nest_str is None:
+        return jsonify({'error': 'YAML 解析错误，请检查输入的 YAML 格式'}), 400
+    return jsonify({'merged_nest_yaml': merged_nest_str})
 
 if __name__ == '__main__':
     app.run(debug=True)
